@@ -1,0 +1,70 @@
+:root {
+    --bg: #121214;
+    --card: #202024;
+    --primary: #8257e6;
+    --primary-hover: #9466ff;
+    --text: #e1e1e6;
+    --text-sec: #a8a8b3;
+    --danger: #e65757;
+    --success: #04d361;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; }
+
+.container { width: 100%; max-width: 600px; padding: 20px; }
+
+/* HEADER */
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.logo { font-weight: 800; font-size: 1.5rem; color: var(--primary); }
+nav button { background: none; border: none; color: var(--text-sec); cursor: pointer; margin-left: 15px; font-weight: 600; }
+nav button:hover { color: var(--text); }
+
+/* SECTIONS */
+.hidden-section { display: none; }
+.active-section { display: block; animation: fadeIn 0.5s; }
+.hidden { display: none !important; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* HERO */
+.hero { text-align: center; margin-top: 50px; }
+.hero h1 { font-size: 2.5rem; line-height: 1.1; margin-bottom: 15px; background: linear-gradient(90deg, #8257e6, #ff79c6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero p { color: var(--text-sec); margin-bottom: 30px; }
+
+/* FORMS */
+.form-group { margin-bottom: 15px; text-align: left; }
+label { display: block; margin-bottom: 5px; color: var(--text-sec); font-size: 0.9rem; }
+input, select { width: 100%; padding: 12px; background: var(--card); border: 1px solid #333; color: white; border-radius: 6px; font-size: 1rem; }
+input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+/* BUTTONS */
+button { cursor: pointer; transition: 0.2s; }
+.btn-primary { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 1rem; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary { background: var(--card); color: var(--text); border: 1px solid #333; padding: 10px 20px; border-radius: 6px; }
+.btn-danger { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 4px; font-size: 0.9rem; margin-top: 10px; }
+.btn-success { background: var(--success); color: #121214; border: none; padding: 8px 15px; border-radius: 4px; font-size: 0.9rem; margin-top: 10px; font-weight: bold; }
+.btn-small { font-size: 0.8rem; padding: 5px 10px; }
+.full-width { width: 100%; margin-bottom: 20px; }
+.link-text { color: var(--text-sec); font-size: 0.8rem; text-decoration: underline; cursor: pointer; margin-top: 10px; text-align: center; }
+
+/* CARDS DE OFENSIVA */
+.streaks-grid { display: flex; flex-direction: column; gap: 15px; }
+.streak-card { background: var(--card); padding: 20px; border-radius: 10px; border: 1px solid #333; position: relative; }
+.streak-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.streak-emoji { font-size: 2rem; margin-right: 15px; }
+.streak-info h3 { font-size: 1.2rem; }
+.streak-timer { font-family: monospace; font-size: 1.5rem; color: var(--primary); margin: 15px 0; font-weight: bold; }
+.streak-type-badge { font-size: 0.7rem; background: #333; padding: 3px 8px; border-radius: 4px; color: #888; text-transform: uppercase; }
+
+/* MOTIVATION */
+.motivation-banner { background: rgba(130, 87, 230, 0.1); border-left: 4px solid var(--primary); padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+.motivation-banner p { font-style: italic; color: #ccc; }
+.info-text { font-size: 0.8rem; color: var(--text-sec); margin-top: 5px; }
+
+/* LOADER */
+.loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
