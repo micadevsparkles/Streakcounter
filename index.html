@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Ofensiva | Foco & Disciplina</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo">🔥 Ofensiva</div>
+            <nav>
+                <button onclick="showSection('home')">Início</button>
+                <button onclick="showSection('my-streaks')">Minhas Ofensivas</button>
+            </nav>
+        </header>
+
+        <div id="motivation-banner" class="motivation-banner">
+            <p id="quote-text">"A disciplina é a ponte entre metas e realizações."</p>
+        </div>
+
+        <section id="home" class="active-section">
+            <div class="hero">
+                <h1>Construa hábitos indestrutíveis.</h1>
+                <p>Monitore seu progresso, mantenha o foco e nunca quebre a corrente.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" onclick="showSection('create')">Criar Nova Ofensiva</button>
+                    <button class="btn-secondary" onclick="showSection('my-streaks')">Ver Minhas Ofensivas</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="create" class="hidden-section">
+            <h2>Criar Nova Ofensiva</h2>
+            <form id="create-form">
+                <div class="form-group">
+                    <label>Nome de Usuário (Único)</label>
+                    <input type="text" id="new-username" required placeholder="ex: joaosilva99">
+                </div>
+                
+                <div class="form-group">
+                    <label>Telefone (Para recuperação)</label>
+                    <input type="tel" id="new-tel" required placeholder="(XX) 9XXXX-XXXX">
+                </div>
+
+                <div class="form-group">
+                    <label>Título da Ofensiva</label>
+                    <input type="text" id="streak-title" required placeholder="ex: Sem açúcar, Ler 10 paginas...">
+                </div>
+
+                <div class="form-group">
+                    <label>Emoji Representativo</label>
+                    <select id="streak-emoji">
+                        <option value="🔥">🔥 Fogo</option>
+                        <option value="💪">💪 Exercício</option>
+                        <option value="📚">📚 Leitura</option>
+                        <option value="💧">💧 Água</option>
+                        <option value="🧘">🧘 Meditação</option>
+                        <option value="🚭">🚭 Vício</option>
+                        <option value="🚀">🚀 Foguete</option>
+                        <option value="💻">💻 Código</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Data/Hora de Início</label>
+                    <input type="datetime-local" id="start-time" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de Ofensiva</label>
+                    <select id="streak-type" onchange="explainType()">
+                        <option value="1">Tipo 1: Cronômetro Contínuo</option>
+                        <option value="2">Tipo 2: Check-in Diário</option>
+                    </select>
+                    <p id="type-explanation" class="info-text">Tipo 1: O tempo corre sozinho. Se falhar, clica em "Falhei" e zera.</p>
+                </div>
+
+                <button type="submit" class="btn-primary">Salvar Ofensiva</button>
+            </form>
+        </section>
+
+        <section id="my-streaks" class="hidden-section">
+            <div id="login-area">
+                <h2>Acessar Ofensivas</h2>
+                <div class="form-group">
+                    <label>Digite seu Usuário</label>
+                    <input type="text" id="login-username">
+                </div>
+                <button class="btn-primary" onclick="loadStreaks()">Entrar</button>
+                <p class="link-text" onclick="showSection('recover')">Esqueci meu nome de usuário</p>
+            </div>
+
+            <div id="dashboard-area" class="hidden">
+                <div class="dashboard-header">
+                    <h2 id="user-welcome">Olá!</h2>
+                    <button class="btn-small" onclick="logout()">Sair</button>
+                </div>
+                <button class="btn-secondary full-width" onclick="showSection('create')">+ Adicionar Nova Meta</button>
+                
+                <div id="streaks-list" class="streaks-grid">
+                    <p class="loading">Carregando...</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="recover" class="hidden-section">
+            <h2>Recuperar Acesso</h2>
+            <div class="form-group">
+                <label>Digite seu Telefone cadastrado</label>
+                <input type="tel" id="recover-tel">
+            </div>
+            <button class="btn-primary" onclick="recoverUser()">Pesquisar</button>
+            <p id="recover-result"></p>
+            <button class="btn-text" onclick="showSection('my-streaks')">Voltar</button>
+        </section>
+
+        <div id="loader" class="loader-overlay hidden">
+            <div class="spinner"></div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
