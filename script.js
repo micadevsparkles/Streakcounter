@@ -1,6 +1,6 @@
 // CONFIGURAÇÃO
 // 🔴 IMPORTANTE: COLE SUA URL DO APPS SCRIPT ABAIXO
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsC8Qdd0zqivGjfGHqAWNmMfgXqf_L6TmwDalsN_hvDzW37FYyCjhSq25YFYvbj3ea9g/exec'; 
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeSwMAVLceOAQ0gaq0t-GiQpqRg1934mVBqMVylK_D2IABFzW03JeaTM1HexXnMzWvvQ/exec'; 
 
 // Frases motivacionais
 const quotes = [
@@ -228,18 +228,24 @@ function renderStreaks() {
         } 
         // Configuração Tipo 2
         else {
-            // Verifica se já fez hoje
-            const lastCheckin = new Date(streak.tempoInicio); // No tipo 2, tempoInicio guarda ultimo checkin (ver lógica AppScript)
+            // Normalizar a data que vem do Google Sheets
+            const lastCheckinRaw = streak.tempoInicio;
+            const lastCheckin = new Date(lastCheckinRaw);
             const today = new Date();
-            const isToday = lastCheckin.toDateString() === today.toDateString();
+
+            // Comparação ignorando as horas (apenas dia, mês e ano)
+            const isToday = lastCheckin.getDate() === today.getDate() && 
+                            lastCheckin.getMonth() === today.getMonth() &&
+                            lastCheckin.getFullYear() === today.getFullYear();
             
-            if (isToday) {
-                controlButtons = `<button class="btn-secondary" disabled>Tarefa Concluída Hoje ✅</button>`;
+            // Se o contador for 0, significa que ele nunca fez ou resetou
+            // Se isToday for verdade, ele já clicou hoje
+            if (isToday && streak.tempoAtual > 0) {
+                controlButtons = `<button class="btn-secondary" disabled style="opacity: 0.7; cursor: not-allowed;">Tarefa Concluída Hoje ✅</button>`;
             } else {
-                controlButtons = `<button class="btn-success" onclick="updateStreak(${index}, 'done')">Tarefa Concluída</button>`;
+                controlButtons = `<button class="btn-success" onclick="updateStreak(${index}, 'done')">Marcar Tarefa como Concluída</button>`;
             }
         }
-
         card.innerHTML = `
             <div class="streak-header">
                 <span class="streak-emoji">${streak.emoji || '🔥'}</span>
@@ -293,24 +299,22 @@ function startTimers() {
 async function updateStreak(index, actionType) {
     const streak = userStreaks[index];
     
-    if (streak.tipo == "2" && actionType == "done") {
-        // Validação Front-end simples de horário (00:00 - 23:59 é sempre true para Date local, mas ok)
-        // Apenas envia
-    }
+    const confirmMsg = actionType === 'fail' 
+        ? "Tem certeza que falhou? O contador será zerado." 
+        : "Confirmar conclusão da tarefa hoje?";
 
-    if (!confirm(actionType === 'fail' ? "Tem certeza que falhou? O contador será zerado." : "Confirmar conclusão da tarefa hoje?")) {
-        return;
-    }
+    if (!confirm(confirmMsg)) return;
 
     const payload = {
         action: "updateStreak",
-        rowIndex: streak.rowIndex,
-        tipo: streak.tipo
+        rowIndex: streak.rowIndex, // Este índice vem da planilha (ex: 2, 3...)
+        tipo: streak.tipo.toString()
     };
 
     const res = await apiRequest(payload);
-    if (res && res.status === "success") {
-        // Recarregar lista para pegar dados atualizados do servidor
+    // Mesmo que o retorno JSON falhe por CORS, se gravou na planilha, vamos recarregar
+    alert("Processando... Aguarde um instante.");
+    setTimeout(() => {
         loadStreaks(); 
-    }
+    }, 1500); // Pequeno delay para a planilha processar
 }
