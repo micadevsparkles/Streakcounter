@@ -1,6 +1,6 @@
 // CONFIGURAÇÃO
 // 🔴 IMPORTANTE: COLE SUA URL DO APPS SCRIPT ABAIXO
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAQzHTs407RAlO3cUnuWbgnTSBiDz2cRbW9cNF64JNGEW9-2SzmOBVe9BaTzPXud-lDw/exec'; 
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsC8Qdd0zqivGjfGHqAWNmMfgXqf_L6TmwDalsN_hvDzW37FYyCjhSq25YFYvbj3ea9g/exec'; 
 
 // Frases motivacionais
 const quotes = [
