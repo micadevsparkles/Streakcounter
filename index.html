@@ -26,26 +26,28 @@
 <body class="min-h-screen flex items-center justify-center p-4">
 
   <!-- ==================== ADAPTER API ==================== -->
+<!-- ==================== ADAPTER API AJUSTADA PARA GITHUB ==================== -->
   <script>
-    const isAppsScript = typeof google !== 'undefined' && google.script;
+    // COLE A URL QUE VOCÊ COPIOU NA IMPLANTAÇÃO DO GOOGLE AQUI
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwbG_CK1wziu-1fE0JfRvmBhX3E_LMB6LnwslDJuX7xMyT4NGaqpVnBBp0nxMeZSwk7PQ/exec"; 
 
     const api = {
-      call: (funcName, ...args) => {
-        return new Promise((resolve, reject) => {
-          if (isAppsScript) {
-            // Chamada real para o Google Apps Script
-            google.script.run
-              .withSuccessHandler(resolve)
-              .withFailureHandler(reject)[funcName](...args);
-          } else {
-            console.warn("Ambiente local: Simulando chamada para " + funcName);
-            // Simulação local para desenvolvimento (Mock)
-            setTimeout(() => {
-              if(funcName === 'verifyLogin') resolve({ success: false, message: "Use o ambiente do Apps Script para logar." });
-              else resolve({ success: true });
-            }, 500);
-          }
-        });
+      call: async (funcName, ...args) => {
+        try {
+          // No GitHub, usamos fetch para enviar os dados para o Google Apps Script
+          const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              function: funcName,
+              args: args
+            })
+          });
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("Erro na conexão:", error);
+          return { success: false, message: "Erro de conexão com o servidor." };
+        }
       }
     };
   </script>
