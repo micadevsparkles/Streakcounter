@@ -1,135 +1,526 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Ofensiva | Foco & Disciplina</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guerreiro - Libertação</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Estilos Customizados adicionais */
+    body { background-color: #0a0a0a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .glass-panel { background: rgba(25, 25, 25, 0.95); backdrop-filter: blur(10px); border: 1px solid #333; }
+    .btn-primary { background: #ffffff; color: #000000; font-weight: bold; transition: all 0.2s ease; }
+    .btn-primary:hover { background: #e0e0e0; transform: scale(0.98); }
+    .btn-outline { border: 1px solid #ffffff; color: #ffffff; transition: all 0.2s ease; }
+    .btn-outline:hover { background: #ffffff; color: #000000; }
+    .btn-danger { border: 1px solid #ef4444; color: #ef4444; transition: all 0.2s ease; }
+    .btn-danger:hover { background: #ef4444; color: #ffffff; }
+    .input-field { background: #1a1a1a; border: 1px solid #333; color: white; width: 100%; padding: 12px; border-radius: 8px; outline: none; transition: border 0.3s; }
+    .input-field:focus { border-color: #fff; }
+    
+    /* Loader Spinner */
+    .loader { border: 3px solid #333; border-top: 3px solid #fff; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0a; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+  </style>
 </head>
-<body>
+<body class="min-h-screen flex items-center justify-center p-4">
 
-    <div class="container">
-        <header>
-            <div class="logo">🔥 Ofensiva</div>
-            <nav>
-                <button onclick="showSection('home')">Início</button>
-                <button onclick="showSection('my-streaks')">Minhas Ofensivas</button>
-            </nav>
-        </header>
+  <!-- ==================== ADAPTER API (Mock para preview local e real para Apps Script) ==================== -->
+  <script>
+    const isAppsScript = typeof google !== 'undefined' && google.script;
+    
+    // Banco de dados simulado para testar fora do Apps Script
+    let mockDB = JSON.parse(localStorage.getItem('guerreiroMockDB')) || [];
+    function saveMockDB() { localStorage.setItem('guerreiroMockDB', JSON.stringify(mockDB)); }
 
-        <div id="motivation-banner" class="motivation-banner">
-            <p id="quote-text">"A disciplina é a ponte entre metas e realizações."</p>
+    const api = {
+      call: (funcName, ...args) => {
+        return new Promise((resolve, reject) => {
+          if (isAppsScript) {
+            google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[funcName](...args);
+          } else {
+            // SIMULAÇÃO DO BACKEND
+            setTimeout(() => {
+              if(funcName === 'verifyLogin') {
+                const user = mockDB.find(u => u.usuario === args[0] && u.senha === args[1]);
+                resolve(user ? { success: true, ...user } : { success: false, message: "Credenciais inválidas no mock local." });
+              }
+              else if(funcName === 'createAccount') {
+                if(mockDB.find(u => u.usuario === args[0].usuario)) return resolve({ success: false, message: "Usuário já existe."});
+                const now = new Date().toISOString();
+                const newUser = { ...args[0], streak: now, notificacoes: JSON.stringify([{msg:"Bem-vindo guerreiro!", date:now}]), diasCheck: "[]", diasX: "[]" };
+                mockDB.push(newUser); saveMockDB();
+                resolve({ success: true });
+              }
+              else if(funcName === 'resetPassword') {
+                const idx = mockDB.findIndex(u => u.usuario === args[0] && u.email === args[1]);
+                if(idx > -1) { mockDB[idx].senha = args[2]; saveMockDB(); resolve({success:true}); }
+                else resolve({success:false, message:"Dados incorretos"});
+              }
+              else if(funcName === 'registerRelapse') {
+                const idx = mockDB.findIndex(u => u.usuario === args[0]);
+                if(idx > -1) {
+                  const now = new Date().toISOString();
+                  mockDB[idx].streak = now;
+                  let diasX = JSON.parse(mockDB[idx].diasX || "[]");
+                  diasX.push(now.split('T')[0]);
+                  mockDB[idx].diasX = JSON.stringify(diasX);
+                  let notifs = JSON.parse(mockDB[idx].notificacoes || "[]");
+                  notifs.unshift({msg: "Você recaiu. Levante-se!", date: now});
+                  mockDB[idx].notificacoes = JSON.stringify(notifs);
+                  saveMockDB();
+                  resolve({success: true, streak: now, diasX: mockDB[idx].diasX, notificacoes: mockDB[idx].notificacoes});
+                }
+              }
+              else if(funcName === 'syncCheckDays') {
+                  resolve({success: true}); // Apenas simula sucesso
+              }
+            }, 800); // 800ms de delay simulado
+          }
+        });
+      }
+    };
+  </script>
+
+  <!-- ==================== CONTAINER PRINCIPAL ==================== -->
+  <div id="app" class="w-full max-w-md w-full relative">
+    
+    <!-- 1. TELA DE LOGIN -->
+    <div id="login-view" class="w-full">
+      <div class="text-center mb-10">
+        <h1 class="text-4xl font-bold tracking-widest uppercase text-white mb-2">Libertação</h1>
+        <p class="text-gray-400 text-sm">O primeiro passo é decidir parar.</p>
+      </div>
+
+      <div class="glass-panel p-6 rounded-2xl shadow-2xl">
+        <div id="login-error" class="hidden bg-red-900/50 border border-red-500 text-red-200 p-3 rounded-lg text-sm mb-4 text-center"></div>
+        
+        <div class="space-y-4">
+          <input type="text" id="login-user" placeholder="Usuário" class="input-field" autocomplete="off">
+          <input type="password" id="login-pass" placeholder="Senha" class="input-field">
+          
+          <button onclick="handleLogin()" id="btn-login" class="btn-primary w-full py-3 rounded-lg mt-2 flex justify-center items-center">
+            <span id="login-text">ENTRAR</span>
+            <span id="login-loader" class="loader hidden"></span>
+          </button>
         </div>
 
-        <section id="home" class="active-section">
-            <div class="hero">
-                <h1>Construa hábitos indestrutíveis.</h1>
-                <p>Monitore seu progresso, mantenha o foco e nunca quebre a corrente.</p>
-                <div class="hero-buttons">
-                    <button class="btn-primary" onclick="showSection('create')">Criar Nova Ofensiva</button>
-                    <button class="btn-secondary" onclick="showSection('my-streaks')">Ver Minhas Ofensivas</button>
-                </div>
-            </div>
-        </section>
-
-        <section id="create" class="hidden-section">
-            <h2>Criar Nova Ofensiva</h2>
-            <form id="create-form">
-                <div class="form-group">
-                    <label>Nome de Usuário (Único)</label>
-                    <input type="text" id="new-username" required placeholder="ex: joaosilva99">
-                </div>
-                
-                <div class="form-group">
-                    <label>Telefone (Para recuperação)</label>
-                    <input type="tel" id="new-tel" required placeholder="(XX) 9XXXX-XXXX">
-                </div>
-
-                <div class="form-group">
-                    <label>Título da Ofensiva</label>
-                    <input type="text" id="streak-title" required placeholder="ex: Sem açúcar, Ler 10 paginas...">
-                </div>
-
-                <div class="form-group">
-                    <label>Emoji Representativo</label>
-                    <select id="streak-emoji">
-                        <option value="🔥">🔥 Fogo</option>
-                        <option value="💪">💪 Exercício</option>
-                        <option value="📚">📚 Leitura</option>
-                        <option value="💧">💧 Água</option>
-                        <option value="🧘">🧘 Meditação</option>
-                        <option value="🚭">🚭 Vício</option>
-                        <option value="🚀">🚀 Foguete</option>
-                        <option value="💻">💻 Código</option>
-                        <option value="💤">💤 Sono</option>
-                        <option value="✊">✊ Fap</option>
-                        <option value="📱">📱 Tela</option>
-                        <option value="🔞">🔞 Conteúdo adulto</option>
-                        <option value="🚫">🚫 Proibido</option>
-                        <option value="✝️">✝️ Religião</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Data/Hora de Início</label>
-                    <input type="datetime-local" id="start-time" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Tipo de Ofensiva</label>
-                    <select id="streak-type" onchange="explainType()">
-                        <option value="1">Tipo 1: Cronômetro Contínuo</option>
-                        <option value="2">Tipo 2: Check-in Diário</option>
-                    </select>
-                    <p id="type-explanation" class="info-text">Tipo 1: O tempo corre sozinho. Se falhar, clica em "Falhei" e zera.</p>
-                </div>
-
-                <button type="submit" class="btn-primary">Salvar Ofensiva</button>
-            </form>
-        </section>
-
-        <section id="my-streaks" class="hidden-section">
-            <div id="login-area">
-                <h2>Acessar Ofensivas</h2>
-                <div class="form-group">
-                    <label>Digite seu Usuário</label>
-                    <input type="text" id="login-username">
-                </div>
-                <button class="btn-primary" onclick="loadStreaks()">Entrar</button>
-                <p class="link-text" onclick="showSection('recover')">Esqueci meu nome de usuário</p>
-            </div>
-
-            <div id="dashboard-area" class="hidden">
-                <div class="dashboard-header">
-                    <h2 id="user-welcome">Olá!</h2>
-                    <button class="btn-small" onclick="logout()">Sair</button>
-                </div>
-                <button class="btn-secondary full-width" onclick="showSection('create')">+ Adicionar Nova Meta</button>
-                
-                <div id="streaks-list" class="streaks-grid">
-                    <p class="loading">Carregando...</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="recover" class="hidden-section">
-            <h2>Recuperar Acesso</h2>
-            <div class="form-group">
-                <label>Digite seu Telefone cadastrado</label>
-                <input type="tel" id="recover-tel">
-            </div>
-            <button class="btn-primary" onclick="recoverUser()">Pesquisar</button>
-            <p id="recover-result"></p>
-            <button class="btn-text" onclick="showSection('my-streaks')">Voltar</button>
-        </section>
-
-        <div id="loader" class="loader-overlay hidden">
-            <div class="spinner"></div>
+        <div class="mt-6 flex justify-between text-sm text-gray-400">
+          <button onclick="openModal('modal-create')" class="hover:text-white transition">Criar uma conta</button>
+          <button onclick="openModal('modal-forgot')" class="hover:text-white transition">Esqueci a senha</button>
         </div>
+      </div>
+    </div>
+
+
+    <!-- 2. DASHBOARD (ÁREA LOGADA) -->
+    <div id="dashboard-view" class="hidden w-full pb-10">
+      
+      <!-- Topbar -->
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-xl font-bold text-gray-200">Bem-vindo, <span id="dash-user" class="text-white">guerreiro</span>!</h2>
+        <div class="relative cursor-pointer" onclick="openModal('modal-notif')">
+          <!-- Icone Bell -->
+          <svg class="w-7 h-7 text-gray-300 hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+          <span id="notif-badge" class="hidden absolute top-0 right-0 bg-red-500 border border-black w-3 h-3 rounded-full"></span>
+        </div>
+      </div>
+
+      <!-- Fogo e Contador Central -->
+      <div class="flex flex-col items-center justify-center bg-zinc-900/50 p-8 rounded-3xl border border-zinc-800 shadow-xl relative overflow-hidden mb-6">
+        <!-- Glow effect -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative flex items-center justify-center w-32 h-32 mb-4">
+          <!-- Icone Fogo -->
+          <svg class="w-28 h-28 text-white opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.5 12.5c0 2.5-1.5 4.5-4 5.5.5-1.5 0-3-1.5-4.5-1.5 1.5-2 3.5-1.5 5.5-3-1.5-3.5-3.5-3.5-5.5 0-2.5 2-4 3.5-6 1.5-2 1-4.5 1-4.5s1.5 1 2.5 3c1 2 2.5 3 2.5 5.5z" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>
+          <div class="absolute flex flex-col items-center mt-3">
+            <span id="dash-days" class="text-4xl font-black text-white leading-none">0</span>
+            <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-1">Limpo</span>
+          </div>
+        </div>
+
+        <div class="text-center z-10">
+          <p class="text-gray-400 text-xs tracking-widest uppercase mb-1">Tempo Total</p>
+          <div id="dash-clock" class="text-2xl font-mono font-medium tracking-tight text-white">00:00:00</div>
+        </div>
+      </div>
+
+      <!-- Botões de Ação -->
+      <div class="grid grid-cols-2 gap-4 mb-8">
+        <button onclick="confirmRelapse()" class="btn-danger w-full py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          EU RECAÍ
+        </button>
+        <button onclick="openModal('modal-metas')" class="btn-outline w-full py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm bg-zinc-900/50 hover:bg-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          METAS
+        </button>
+      </div>
+
+      <!-- Calendário Mensal -->
+      <div class="glass-panel rounded-2xl p-5 mb-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold text-sm uppercase tracking-wider text-gray-300" id="calendar-month">Novembro 2023</h3>
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        </div>
+        
+        <div class="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-2">
+          <div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div>
+        </div>
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center">
+          <!-- Dias gerados via JS -->
+        </div>
+      </div>
+      
+      <!-- Botão Logout -->
+      <button onclick="logout()" class="w-full text-center text-gray-600 text-sm hover:text-white transition">Sair da conta</button>
 
     </div>
 
-    <script src="script.js"></script>
+  </div> <!-- FIM APP -->
+
+
+  <!-- ==================== MODAIS / DIALOGS ==================== -->
+  
+  <!-- Overlay Global -->
+  <div id="modal-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden" onclick="closeModals()"></div>
+
+  <!-- Modal Criar Conta -->
+  <div id="modal-create" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm glass-panel p-6 rounded-2xl z-50 hidden">
+    <h2 class="text-xl font-bold mb-4">Criar Conta</h2>
+    <div id="create-msg" class="hidden p-2 text-sm text-center rounded mb-3"></div>
+    <div class="space-y-3">
+      <input type="text" id="reg-user" placeholder="Nome de Usuário" class="input-field">
+      <input type="email" id="reg-email" placeholder="E-mail (Recuperação)" class="input-field">
+      <input type="password" id="reg-pass" placeholder="Senha" class="input-field">
+      <button onclick="handleCreateAccount()" class="btn-primary w-full py-3 rounded-lg mt-2 flex justify-center items-center">
+        <span id="create-text">REGISTRAR</span>
+        <span id="create-loader" class="loader hidden" style="border-color:#ccc; border-top-color:#000;"></span>
+      </button>
+    </div>
+    <button onclick="closeModals()" class="mt-4 w-full text-sm text-gray-400 hover:text-white">Cancelar</button>
+  </div>
+
+  <!-- Modal Esqueci Senha -->
+  <div id="modal-forgot" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm glass-panel p-6 rounded-2xl z-50 hidden">
+    <h2 class="text-xl font-bold mb-4">Recuperar Senha</h2>
+    <div id="forgot-msg" class="hidden p-2 text-sm text-center rounded mb-3"></div>
+    <div class="space-y-3">
+      <input type="text" id="forgot-user" placeholder="Usuário" class="input-field">
+      <input type="email" id="forgot-email" placeholder="E-mail cadastrado" class="input-field">
+      <input type="password" id="forgot-pass" placeholder="Nova Senha" class="input-field">
+      <button onclick="handleResetPassword()" class="btn-primary w-full py-3 rounded-lg mt-2 flex justify-center items-center">
+        <span id="forgot-text">ALTERAR SENHA</span>
+        <span id="forgot-loader" class="loader hidden" style="border-color:#ccc; border-top-color:#000;"></span>
+      </button>
+    </div>
+    <button onclick="closeModals()" class="mt-4 w-full text-sm text-gray-400 hover:text-white">Cancelar</button>
+  </div>
+
+  <!-- Modal Metas -->
+  <div id="modal-metas" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm glass-panel p-6 rounded-2xl z-50 hidden max-h-[80vh] flex flex-col">
+    <div class="flex justify-between items-center mb-4 shrink-0">
+      <h2 class="text-xl font-bold">Metas de Batalha</h2>
+      <button onclick="closeModals()" class="text-gray-400 hover:text-white">&times;</button>
+    </div>
+    <div id="metas-list" class="space-y-3 overflow-y-auto pr-2 pb-2">
+      <!-- Gerado via JS -->
+    </div>
+  </div>
+
+  <!-- Modal Notificações -->
+  <div id="modal-notif" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm glass-panel p-6 rounded-2xl z-50 hidden max-h-[80vh] flex flex-col">
+    <div class="flex justify-between items-center mb-4 shrink-0">
+      <h2 class="text-xl font-bold">Notificações</h2>
+      <button onclick="closeModals()" class="text-gray-400 hover:text-white">&times;</button>
+    </div>
+    <div id="notif-list" class="space-y-3 overflow-y-auto pr-2 pb-2 text-sm">
+      <!-- Gerado via JS -->
+    </div>
+  </div>
+
+
+  <!-- ==================== LÓGICA JAVASCRIPT ==================== -->
+  <script>
+    // --- ESTADO GLOBAL ---
+    let currentUser = null;
+    let streakDate = null;
+    let clockInterval = null;
+    let diasX = [];
+    let diasCheck = [];
+    let notificacoes = [];
+
+    const metasAlvos = [
+      { dias: 1, label: "1 Dia" }, { dias: 7, label: "1 Semana" }, { dias: 30, label: "1 Mês" },
+      { dias: 42, label: "6 Semanas" }, { dias: 60, label: "60 Dias" }, { dias: 90, label: "90 Dias" },
+      { dias: 180, label: "6 Meses" }, { dias: 365, label: "1 Ano" }, { dias: 547, label: "1 Ano e 6 Meses" },
+      { dias: 730, label: "2 Anos" }, { dias: 1095, label: "3 Anos" }, { dias: 1460, label: "4 Anos" },
+      { dias: 1825, label: "5 Anos" }, { dias: 3650, label: "10 Anos" }
+    ];
+
+    // --- FUNÇÕES DE UI ---
+    function openModal(id) {
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.getElementById(id).classList.remove('hidden');
+      if(id === 'modal-notif') document.getElementById('notif-badge').classList.add('hidden'); // Clear badge
+    }
+    
+    function closeModals() {
+      document.getElementById('modal-overlay').classList.add('hidden');
+      ['modal-create', 'modal-forgot', 'modal-metas', 'modal-notif'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+    }
+
+    function showMsg(id, text, isError = true) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = isError ? "p-2 text-sm text-center rounded mb-3 bg-red-900/50 text-red-200 border border-red-500 block" 
+                             : "p-2 text-sm text-center rounded mb-3 bg-green-900/50 text-green-200 border border-green-500 block";
+    }
+
+    function toggleLoader(btnId, show) {
+      const btn = document.getElementById(btnId);
+      const textSpan = document.getElementById(btnId.replace('btn-', '').replace('login', 'login-text').replace('reg', 'create-text').replace('forgot', 'forgot-text'));
+      const loaderSpan = document.getElementById(btnId.replace('btn-', '').replace('login', 'login-loader').replace('reg', 'create-loader').replace('forgot', 'forgot-loader') || btnId + '-loader');
+      
+      if(show) { textSpan.classList.add('hidden'); loaderSpan.classList.remove('hidden'); btn.disabled = true; btn.style.opacity = '0.7'; }
+      else { textSpan.classList.remove('hidden'); loaderSpan.classList.add('hidden'); btn.disabled = false; btn.style.opacity = '1'; }
+    }
+
+    // --- LOGIN ---
+    async function handleLogin() {
+      const user = document.getElementById('login-user').value.trim();
+      const pass = document.getElementById('login-pass').value.trim();
+      if(!user || !pass) return showMsg('login-error', 'Preencha todos os campos.');
+
+      showMsg('login-error', '', false);
+      document.getElementById('login-error').classList.add('hidden');
+      toggleLoader('btn-login', true);
+
+      try {
+        const res = await api.call('verifyLogin', user, pass);
+        if (res.success) {
+          currentUser = res;
+          streakDate = new Date(res.streak);
+          try { diasX = JSON.parse(res.diasX || "[]"); } catch(e){}
+          try { diasCheck = JSON.parse(res.diasCheck || "[]"); } catch(e){}
+          try { notificacoes = JSON.parse(res.notificacoes || "[]"); } catch(e){}
+          
+          initDashboard();
+          api.call('syncCheckDays', user); // Atualiza os dias limpos no background
+        } else {
+          showMsg('login-error', res.message);
+        }
+      } catch (e) {
+        showMsg('login-error', 'Erro de conexão.');
+      }
+      toggleLoader('btn-login', false);
+    }
+
+    // --- CADASTRO ---
+    async function handleCreateAccount() {
+      const user = document.getElementById('reg-user').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass = document.getElementById('reg-pass').value.trim();
+      if(!user || !email || !pass) return showMsg('create-msg', 'Preencha tudo.');
+
+      toggleLoader('create-text', true); // Hack to use same toggle logic
+      document.getElementById('create-text').classList.add('hidden');
+      document.getElementById('create-loader').classList.remove('hidden');
+
+      const res = await api.call('createAccount', {usuario: user, email: email, senha: pass});
+      
+      document.getElementById('create-text').classList.remove('hidden');
+      document.getElementById('create-loader').classList.add('hidden');
+
+      if(res.success) {
+        showMsg('create-msg', 'Criado com sucesso! Faça login.', false);
+        setTimeout(closeModals, 2000);
+      } else {
+        showMsg('create-msg', res.message);
+      }
+    }
+
+    // --- RESET SENHA ---
+    async function handleResetPassword() {
+      const user = document.getElementById('forgot-user').value.trim();
+      const email = document.getElementById('forgot-email').value.trim();
+      const pass = document.getElementById('forgot-pass').value.trim();
+      if(!user || !email || !pass) return showMsg('forgot-msg', 'Preencha tudo.');
+
+      document.getElementById('forgot-text').classList.add('hidden');
+      document.getElementById('forgot-loader').classList.remove('hidden');
+
+      const res = await api.call('resetPassword', user, email, pass);
+      
+      document.getElementById('forgot-text').classList.remove('hidden');
+      document.getElementById('forgot-loader').classList.add('hidden');
+
+      if(res.success) {
+        showMsg('forgot-msg', res.message, false);
+        setTimeout(closeModals, 2000);
+      } else {
+        showMsg('forgot-msg', res.message);
+      }
+    }
+
+    // --- DASHBOARD INIT ---
+    function initDashboard() {
+      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('dashboard-view').classList.remove('hidden');
+      document.getElementById('dash-user').textContent = currentUser.usuario;
+      
+      if(notificacoes.length > 0) document.getElementById('notif-badge').classList.remove('hidden');
+
+      renderCalendar();
+      updateMetasUI();
+      renderNotifications();
+      
+      if(clockInterval) clearInterval(clockInterval);
+      updateClock(); // Correção imediata
+      clockInterval = setInterval(updateClock, 1000);
+    }
+
+    function logout() {
+      if(clockInterval) clearInterval(clockInterval);
+      currentUser = null;
+      document.getElementById('login-user').value = '';
+      document.getElementById('login-pass').value = '';
+      document.getElementById('dashboard-view').classList.add('hidden');
+      document.getElementById('login-view').classList.remove('hidden');
+    }
+
+    // --- CLOCK & STREAK MATH ---
+    function updateClock() {
+      if(!streakDate) return;
+      const now = new Date();
+      const diffMs = now - streakDate;
+      
+      const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diffMs / 1000 / 60) % 60);
+      const s = Math.floor((diffMs / 1000) % 60);
+
+      document.getElementById('dash-days').textContent = d;
+      document.getElementById('dash-clock').textContent = 
+        `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // --- RECAÍDA ---
+    async function confirmRelapse() {
+      if(!confirm("Tem certeza que recaiu? Isso zerará seu progresso e você voltará ao dia 0.")) return;
+      
+      const res = await api.call('registerRelapse', currentUser.usuario);
+      if(res.success) {
+        streakDate = new Date(res.streak);
+        try { diasX = JSON.parse(res.diasX || "[]"); } catch(e){}
+        try { diasCheck = JSON.parse(res.diasCheck || "[]"); } catch(e){}
+        try { notificacoes = JSON.parse(res.notificacoes || "[]"); } catch(e){}
+        
+        updateClock();
+        renderCalendar();
+        updateMetasUI();
+        renderNotifications();
+        document.getElementById('notif-badge').classList.remove('hidden');
+      }
+    }
+
+    // --- CALENDÁRIO ---
+    function renderCalendar() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      
+      const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+      document.getElementById('calendar-month').textContent = `${monthNames[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      // Offset
+      for(let i=0; i<firstDay; i++) {
+        const empty = document.createElement('div');
+        grid.appendChild(empty);
+      }
+
+      // Dias
+      for(let i=1; i<=daysInMonth; i++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+        const isX = diasX.includes(dateStr);
+        const isCheck = diasCheck.includes(dateStr);
+        const isToday = (i === now.getDate());
+
+        const dayDiv = document.createElement('div');
+        dayDiv.className = `w-full aspect-square rounded-md flex items-center justify-center text-sm font-medium relative border border-transparent ${isToday ? 'border-zinc-500 bg-zinc-800' : 'bg-zinc-900/30'}`;
+        
+        if (isX) {
+          dayDiv.innerHTML = `<span class="text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg></span>`;
+        } else if (isCheck) {
+          dayDiv.innerHTML = `<span class="text-green-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></span>`;
+        } else {
+          dayDiv.textContent = i;
+          dayDiv.classList.add('text-zinc-600');
+        }
+        grid.appendChild(dayDiv);
+      }
+    }
+
+    // --- METAS ---
+    function updateMetasUI() {
+      if(!streakDate) return;
+      const daysDiff = Math.floor((new Date() - streakDate) / (1000 * 60 * 60 * 24));
+      
+      const list = document.getElementById('metas-list');
+      list.innerHTML = '';
+
+      metasAlvos.forEach(meta => {
+        const achieved = daysDiff >= meta.dias;
+        const div = document.createElement('div');
+        div.className = `flex justify-between items-center p-3 rounded-xl border ${achieved ? 'border-green-500/30 bg-green-900/20' : 'border-zinc-800 bg-zinc-900/50 opacity-60'}`;
+        
+        div.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center ${achieved ? 'bg-green-500 text-black' : 'bg-zinc-800 text-zinc-500'}">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <span class="font-medium ${achieved ? 'text-green-400' : 'text-zinc-400'}">${meta.label}</span>
+          </div>
+          <span class="text-xs font-mono ${achieved ? 'text-green-500/50' : 'text-zinc-600'}">${meta.dias} D</span>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    // --- NOTIFICAÇÕES ---
+    function renderNotifications() {
+      const list = document.getElementById('notif-list');
+      list.innerHTML = '';
+      if(notificacoes.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma notificação no momento.</p>';
+        return;
+      }
+
+      notificacoes.forEach(n => {
+        const d = new Date(n.date);
+        const div = document.createElement('div');
+        div.className = "p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-gray-300";
+        div.innerHTML = `
+          <p>${n.msg}</p>
+          <p class="text-[10px] text-gray-500 mt-2 text-right">${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</p>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+  </script>
 </body>
 </html>
